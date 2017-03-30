@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+
+if ! xcode-select --print-path > /dev/null; then
+  echo "Installing OSX Developer Tools"
+  echo "Please click install!"
+  until xcode-select --print-path > /dev/null
+  do
+    # This launches an install GUI and immediately returns
+    # Calling it multiple times does not re-launch the GUI
+    xcode-select --install &> /dev/null
+    sleep 10
+    echo "Waiting for install to complete"
+  done
+fi
+
+if ! which brew > /dev/null; then
+  echo "Installing Homebrew"
+  ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+  brew tap homebrew/services
+  brew tap opendoor-labs/tap https://github.com/opendoor-labs/homebrew-tap.git
+fi
+
+$(dirname $0)/brew_dependencies
+
+if [[ ! -d "/usr/local/n" ]]; then
+  echo "Setting up n (Node version manager)"
+  echo "Creating /usr/local/n so node versions can be installed without sudo"
+  sudo mkdir /usr/local/n
+  # Copy chown from Homebrew's /usr/local/Cellar
+  CHOWN="$(ls -ld /usr/local/Cellar | awk '{print $3 ":" $4}')"
+  sudo chown $CHOWN /usr/local/n
+fi

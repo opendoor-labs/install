@@ -1,0 +1,65 @@
+#!/bin/bash
+
+BREW_PACKAGES=(
+  elasticsearch@1.7
+  jq
+  graphviz
+  n
+  opendoor-labs/tap/gothumb
+  opendoor-labs/tap/pusher
+  openssl
+  phantomjs
+  postgis
+  postgres
+  rbenv
+  rbenv-bundler
+  redis
+  ruby-build
+)
+
+BREW_CASK_PACKAGES=(
+  java
+)
+
+echo -n "Checking Homebrew packages..."
+
+brew list --versions ${BREW_PACKAGES[*]} &> /dev/null
+BREW_STATUS="$?"
+
+brew cask ls --versions ${BREW_CASK_PACKAGES[*]} &> /dev/null
+BREW_CASK_STATUS="$?"
+
+# Short circuit for speed if we have all the packages
+if [[ $BREW_STATUS -eq 0 ]] && [[ $BREW_CASK_STATUS -eq 0 ]]; then
+  echo "✅"
+  exit 0
+fi
+echo
+
+maybe_restart_service () {
+  # opendoor-labs/tap/pusher -> pusher
+  SERVICE_NAME=`basename "$1"`
+  brew services list | grep "^$SERVICE_NAME " &> /dev/null
+  if [[ $? -eq 0 ]]; then
+    echo "Restarting $1"
+    brew services restart "$1"
+  fi
+}
+
+for package in "${BREW_PACKAGES[@]}"; do
+  brew list --versions "$package" &> /dev/null
+  if [[ $? -eq 1 ]]; then
+    echo "Installing $package"
+    brew install "$package"
+    maybe_restart_service "$package"
+  fi
+done
+
+for package in "${BREW_CASK_PACKAGES[@]}"; do
+  brew cask ls --versions "$package" &> /dev/null
+  if [[ $? -eq 1 ]]; then
+    echo "Installing $package"
+    brew cask install "$package"
+    maybe_restart_service "$package"
+  fi
+done
