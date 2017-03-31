@@ -32,3 +32,10 @@ if [[ ! -d "/usr/local/n" ]]; then
   CHOWN="$(ls -ld /usr/local/Cellar | awk '{print $3 ":" $4}')"
   sudo chown $CHOWN /usr/local/n
 fi
+
+rbenv install -s
+rbenv global $(rbenv local)
+eval "$(rbenv init -)"
+rbenv rehash
+gem install bundler
+rbenv rehash
